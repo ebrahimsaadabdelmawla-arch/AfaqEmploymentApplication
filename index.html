@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>طلب توظيف | شركة آفاق للتطوير العقاري والمقاولات (AFAQ Group)</title>
+  
+  <!-- Tailwind CSS عبر CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- مكتبات React و Babel لتشغيل الكود مباشرة -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen py-6 px-3">
+
+  <!-- مكان عرض تطبيق React -->
+  <div id="root"></div>
+
+  <!-- كود React التفاعلي -->
+  <script type="text/babel">
+    const { useState } = React;
+
+    function AfaqEmploymentApplication() {
+      // رقم الواتساب المحدث للـ HR
+      const hrWhatsAppNumber = "201101475409"; 
+
+      // روابط الشركة الرسمية
+      const companyLocationUrl = "https://maps.app.goo.gl/EfQd5qm4Vsg4FxPd6";
+      const officialWebsiteUrl = "https://afaqdev.com/";
+
+      // رابط Google Apps Script الخاص بجدول الإكسيل
+      const googleSheetScriptUrl = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+
+      const [isSubmitting, setIsSubmitting] = useState(false);
+
+      const [formData, setFormData] = useState({
+        // البيانات الشخصية
+        fullName: '',
+        address: '',
+        birthDate: '',
+        nationality: 'مصري',
+        phone: '',
+        nationalId: '',
+        email: '',
+        militaryStatus: '',
+        maritalStatus: '',
+        positionApplied: '',
+        preferredBranch: 'فرع الشيخ زايد',
+        shiftPreference: 'دوام كامل (Full-Time)',
+        preferredInterviewTime: 'الصباح (من 10 صباحاً إلى 2 ظهراً)', // الموعد المفضل
+        referredFriend: '',
+
+        // الملفات والمرفقات
+        idFrontImage: null,
+        idBackImage: null,
+        cvFile: null, // السيرة الذاتية CV
+
+        // التعليم والتدريب
+        highSchoolMajor: '',
+        highSchoolDate: '',
+        highSchoolDegree: '',
+        universityMajor: '',
+        universityDate: '',
+        universityDegree: '',
+        additionalQualifications: '',
+
+        // خبرات العمل السابقة
+        company1: '', jobTitle1: '', salary1: '', from1: '', to1: '', reason1: '',
+
+        // بيانات إضافية
+        howDidYouApply: '',
+        hasRelatives: 'لا',
+        relativesDetails: '',
+        isCurrentlyEmployed: 'لا',
+        hasHealthIssues: 'لا'
+      });
+
+      const handleChange = (e) => {
+        const { name, value, files } = e.target;
+        if (files && files[0]) {
+          setFormData((prev) => ({ ...prev, [name]: files[0] }));
+        } else {
+          setFormData((prev) => ({ ...prev, [name]: value }));
+        }
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        // أ) حفظ البيانات تلقائياً في Google Sheets
+        if (googleSheetScriptUrl && googleSheetScriptUrl !== "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+          try {
+            const dataToSend = new FormData();
+            Object.keys(formData).forEach(key => {
+              if (!['idFrontImage', 'idBackImage', 'cvFile'].includes(key)) {
+                dataToSend.append(key, formData[key]);
+              }
+            });
+            
+            await fetch(googleSheetScriptUrl, {
+              method: 'POST',
+              body: dataToSend,
+              mode: 'no-cors'
+            });
+          } catch (error) {
+            console.error('Error saving to Google Sheet:', error);
+          }
+        }
+
+        // ب) تجهيز رسالة الواتساب المنسقة
+        const message = `
+*طلب توظيف جديد | Employment Application*
+*شركة آفاق للتطوير العقاري والمقاولات (AFAQ Group)*
+----------------------------------
+*📍 الفرع المطلوب:* ${formData.preferredBranch}
+*⏰ نظام العمل المفضل:* ${formData.shiftPreference}
+*🕒 الموعد المفضّل للمقابلة:* ${formData.preferredInterviewTime}
+
+*📌 البيانات الشخصية:*
+• *الاسم:* ${formData.fullName}
+• *الوظيفة المطلوبة:* ${formData.positionApplied}
+• *رقم الهاتف:* ${formData.phone}
+• *العنوان:* ${formData.address}
+• *تاريخ الميلاد:* ${formData.birthDate}
+• *الجنسية:* ${formData.nationality}
+• *الرقم القومي:* ${formData.nationalId}
+• *البريد الإلكتروني:* ${formData.email || 'غير مدخل'}
+• *الموقف من التجنيد:* ${formData.militaryStatus}
+• *الحالة الاجتماعية:* ${formData.maritalStatus}
+• *ترشيح زميل:* ${formData.referredFriend || 'لا يوجد'}
+
+💳 *حالة المرفقات:* 
+• صورة وجه البطاقة: ${formData.idFrontImage ? '✓ تم الإرفاق' : '✗ لم ترفق'}
+• صورة ظهر البطاقة: ${formData.idBackImage ? '✓ تم الإرفاق' : '✗ لم ترفق'}
+• ملف السيرة الذاتية CV: ${formData.cvFile ? `✓ تم الاختيار (${formData.cvFile.name})` : '✗ غير مرفق'}
+
+----------------------------------
+*🎓 التعليم والتدريب:*
+• *المرحلة الثانوية:* ${formData.highSchoolMajor || '-'} | تخرج: ${formData.highSchoolDate || '-'}
+• *الجامعة/المعهد:* ${formData.universityMajor || '-'} | تخرج: ${formData.universityDate || '-'}
+• *مؤهلات أخرى:* ${formData.additionalQualifications || 'لا يوجد'}
+
+----------------------------------
+*💼 خبرات العمل السابقة:*
+1️⃣ *الشركة:* ${formData.company1 || 'لا يوجد'} | *الوظيفة:* ${formData.jobTitle1 || '-'} | *المرتب:* ${formData.salary1 || '-'}
+• *الفترة:* من ${formData.from1 || '-'} إلى ${formData.to1 || '-'} | *سبب الترك:* ${formData.reason1 || '-'}
+
+----------------------------------
+*📋 بيانات إضافية:*
+• *كيف تقدمت إلينا؟* ${formData.howDidYouApply || '-'}
+• *هل لديك أقارب بالشركة؟* ${formData.hasRelatives} ${formData.hasRelatives === 'نعم' ? `(${formData.relativesDetails})` : ''}
+• *هل تعمل حالياً؟* ${formData.isCurrentlyEmployed}
+• *هل لديك مشاكل صحية؟* ${formData.hasHealthIssues}
+        `.trim();
+
+        // فتح رابط الواتساب بالرقم المحدث
+        const whatsappUrl = `https://wa.me/${hrWhatsAppNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        setIsSubmitting(false);
+      };
+
+      return (
+        <div className="max-w-3xl mx-auto my-4 p-6 bg-white shadow-xl rounded-2xl border border-gray-200 dir-rtl text-right font-sans relative">
+          
+          {/* الهيدر وشعار الشركة */}
+          <div className="text-center border-b pb-4 mb-6">
+            <div className="flex justify-center mb-3">
+              <div className="flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-2xl shadow-md">
+                <svg className="w-8 h-8 fill-current text-amber-500" viewBox="0 0 24 24">
+                  <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13.5h-13L12 6.5z"/>
+                </svg>
+                <div className="text-right leading-none">
+                  <span className="text-2xl font-black tracking-widest block font-sans">AFAQ</span>
+                  <span className="text-[9px] text-amber-400 font-semibold tracking-widest uppercase">CONTRACTING & DEVELOPMENTS</span>
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-amber-800 mt-2">طلب توظيف | Employment Application</h2>
+            <p className="text-xs text-gray-500 mt-1 max-w-lg mx-auto">
+              تمنح شركة آفاق فرصة متكافئة للعمل وتَبذل الجهد لاختيار أفضل العناصر المؤهلة للوظيفة بناءً على الكفاءة.
+            </p>
+          </div>
+
+          {/* شريط خطوات التقديم والمتابعة */}
+          <div className="bg-gray-100 p-3 rounded-xl mb-6 flex justify-between items-center text-xs text-center font-bold text-gray-600 border border-gray-200">
+            <div className="flex-1 text-amber-800 border-l border-gray-300">1. تعبئة البيانات</div>
+            <div className="flex-1 text-gray-500 border-l border-gray-300">2. الإرسال للـ HR</div>
+            <div className="flex-1 text-gray-500">3. تحديد موعد المقابلة</div>
+          </div>
+
+          {/* نبذة تعريفية وعرض المشروعات */}
+          <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-gray-800">
+            <div className="flex items-center justify-between mb-2 border-b border-amber-200 pb-2">
+              <h3 className="font-bold text-amber-900 text-base flex items-center gap-2">
+                <span>🏢</span> نبذة عن شركة آفاق (AFAQ Group)
+              </h3>
+              <a 
+                href={officialWebsiteUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-amber-800 font-bold bg-amber-200 hover:bg-amber-300 px-3 py-1 rounded-lg transition flex items-center gap-1 shadow-sm"
+              >
+                <span>زيارة موقع المشروعات الرسمي</span>
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2z"/>
+                </svg>
+              </a>
+            </div>
+            <p className="text-xs leading-relaxed text-gray-700 mb-2">
+              تعد شركة <strong>آفاق (AFAQ)</strong> إحدى الشركات الرائدة بمصر في مجالات المقاولات العامة والتطوير العقاري (تصنيف فئة أولى) بالإضافة إلى قطاع المطاعم والأغذية والمشروبات (Food & Beverage). تنفذ الشركة مشروعات كبرى وتجارية وسكنية وصناعية وفق أعلى المعايير الدولية.
+            </p>
+
+            <div className="text-[11px] bg-white p-2 rounded-lg border border-amber-200 text-amber-900 font-medium">
+              <strong>أبرز المشروعات العَقارية والتجارية:</strong> كمبوند أمورادا القاهرة الجديدة (Amorada New Cairo) • أمورادا هب (Amorada Hub) • مشروعات وتطوير البنية التحتية الكبرى.
+            </div>
+          </div>
+
+          {/* قسم مميزات العمل السريعة */}
+          <div className="grid grid-cols-3 gap-2 mb-6 text-center text-xs">
+            <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-lg font-bold text-amber-900 shadow-sm">
+              💰 مرتبات مجزية
+            </div>
+            <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-lg font-bold text-amber-900 shadow-sm">
+              💵 تبس كل 10 أيام
+            </div>
+            <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-lg font-bold text-amber-900 shadow-sm">
+              🛡️ تأمينات صحية واجتماعية
+            </div>
+          </div>
+
+          {/* كارت عنوان وموقع إدارة الشركة */}
+          <div className="bg-gradient-to-r from-slate-900 to-gray-800 text-white p-4 rounded-xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-500 p-2.5 rounded-lg text-slate-900">
+                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-amber-400">مقر إدارة الشركة للمقابلات</h4>
+                <p className="text-xs text-gray-300">انقر لعرض موقع الإدارة على الخريطة للوصول المباشر يوم المقابلة</p>
+              </div>
+            </div>
+            <a 
+              href={companyLocationUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-black py-2.5 px-4 rounded-lg transition duration-200 whitespace-nowrap flex items-center gap-1.5 shadow"
+            >
+              <span>فتح خريطة الموقع</span>
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2z"/>
+              </svg>
+            </a>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* اختيار الفرع، نظام العمل، والموعد المفضّل */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-amber-100/60 p-4 rounded-xl border border-amber-300">
+              <div>
+                <label className="block text-xs font-bold text-amber-900 mb-1">اختر الفرع المفضل *</label>
+                <select 
+                  name="preferredBranch" 
+                  required 
+                  className="w-full border p-2 rounded-lg bg-white font-medium focus:ring-2 focus:ring-amber-500 text-xs"
+                  onChange={handleChange}
+                >
+                  <option value="فرع الشيخ زايد">فرع الشيخ زايد</option>
+                  <option value="فرع التجمع الخامس - 1">فرع التجمع الخامس (الفرع الأول)</option>
+                  <option value="فرع التجمع الخامس - 2">فرع التجمع الخامس (الفرع الثاني)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-amber-900 mb-1">نظام العمل المفضل *</label>
+                <select 
+                  name="shiftPreference" 
+                  required 
+                  className="w-full border p-2 rounded-lg bg-white font-medium focus:ring-2 focus:ring-amber-500 text-xs"
+                  onChange={handleChange}
+                >
+                  <option value="دوام كامل (Full-Time)">دوام كامل (Full-Time)</option>
+                  <option value="دوام جزئي (Part-Time)">دوام جزئي (Part-Time)</option>
+                  <option value="طلاب (تفرغ جزئي)">طلاب (تفرغ جزئي)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-amber-900 mb-1">الموعد المفضّل للمقابلة *</label>
+                <select 
+                  name="preferredInterviewTime" 
+                  required 
+                  className="w-full border p-2 rounded-lg bg-white font-medium focus:ring-2 focus:ring-amber-500 text-xs"
+                  onChange={handleChange}
+                >
+                  <option value="الصباح (من 10 صباحاً إلى 2 ظهراً)">الفترة الصباحية (10ص - 2ظ)</option>
+                  <option value="بعد الظهر (من 2 ظهراً إلى 6 مساءً)">فترة بعد الظهر (2ظ - 6م)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 1. البيانات الشخصية */}
+            <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+              <h3 className="text-lg font-bold text-amber-800 mb-3 border-b border-amber-200 pb-1">1. البيانات الشخصية / Personal Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">الاسم بالكامل *</label>
+                  <input type="text" name="fullName" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">الوظيفة المطلوبة *</label>
+                  <input type="text" name="positionApplied" required placeholder="مثال: كابتن - ويتر - شيف - كاشير - مهندس" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">العنوان *</label>
+                  <input type="text" name="address" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">رقم الهاتف المحمول (واتساب) *</label>
+                  <input type="tel" name="phone" required placeholder="01XXXXXXXXX" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">تاريخ الميلاد *</label>
+                  <input type="date" name="birthDate" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">الجنسية *</label>
+                  <input type="text" name="nationality" defaultValue="مصري" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">الرقم القومي (14 رقم) *</label>
+                  <input type="text" name="nationalId" maxLength="14" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">عنوان البريد الإلكتروني</label>
+                  <input type="email" name="email" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">الموقف من التجنيد *</label>
+                  <select name="militaryStatus" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange}>
+                    <option value="">اختر الموقف</option>
+                    <option value="معفى نهائي">معفى نهائي</option>
+                    <option value="أدى الخدمة العسكرية">أدى الخدمة العسكرية</option>
+                    <option value="مؤجل">مؤجل</option>
+                    <option value="غير مطلوب">غير مطلوب</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">الحالة الاجتماعية *</label>
+                  <select name="maritalStatus" required className="w-full border p-2 rounded-lg bg-white" onChange={handleChange}>
+                    <option value="">اختر الحالة</option>
+                    <option value="أعزب">أعزب</option>
+                    <option value="متزوج">متزوج</option>
+                    <option value="غير ذلك">غير ذلك</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1">رشح أحد من زملائك للوظيفة (اسم المرشح ورقم هاتفه)</label>
+                  <input type="text" name="referredFriend" placeholder="اسم الزميل - الوظيفة - رقم الهاتف" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+              </div>
+            </div>
+
+            {/* المرفقات والسيرة الذاتية (CV) */}
+            <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-200">
+              <h3 className="text-lg font-bold text-blue-900 mb-2 border-b border-blue-200 pb-1">
+                💳 مرفقات البطاقة الشخصية والسيرة الذاتية (CV)
+              </h3>
+              <p className="text-xs text-gray-600 mb-3">يرجى رفع صور واضحة لبطاقة الرقم القومي أو ملف CV إن وجد</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-700">صورة البطاقة (وجه أول)</label>
+                  <input 
+                    type="file" 
+                    name="idFrontImage" 
+                    accept="image/*" 
+                    className="w-full text-xs text-gray-500 border p-2 rounded-lg bg-white" 
+                    onChange={handleChange} 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-700">صورة البطاقة (ظهر أول)</label>
+                  <input 
+                    type="file" 
+                    name="idBackImage" 
+                    accept="image/*" 
+                    className="w-full text-xs text-gray-500 border p-2 rounded-lg bg-white" 
+                    onChange={handleChange} 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1 text-gray-700">إرفاق السيرة الذاتية CV (اختياري)</label>
+                  <input 
+                    type="file" 
+                    name="cvFile" 
+                    accept=".pdf,.doc,.docx" 
+                    className="w-full text-xs text-gray-500 border p-2 rounded-lg bg-white" 
+                    onChange={handleChange} 
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-1">صيغ PDF أو Word</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. التعليم والتدريب */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">2. التعليم والتدريب / Education & Training</h3>
+              
+              <p className="font-semibold text-sm mb-2 text-amber-900">المرحلة الثانوية:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <input type="text" name="highSchoolMajor" placeholder="التخصص" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                <input type="text" name="highSchoolDate" placeholder="تاريخ التخرج" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                <input type="text" name="highSchoolDegree" placeholder="الدرجة العلمية" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+              </div>
+
+              <p className="font-semibold text-sm mb-2 text-amber-900">الجامعة / المعهد:</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <input type="text" name="universityMajor" placeholder="التخصص" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                <input type="text" name="universityDate" placeholder="تاريخ التخرج" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                <input type="text" name="universityDegree" placeholder="الدرجة العلمية" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">مؤهلات علمية وتدريبية أخرى</label>
+                <textarea name="additionalQualifications" rows="2" className="w-full border p-2 rounded-lg bg-white text-sm" onChange={handleChange}></textarea>
+              </div>
+            </div>
+
+            {/* 3. خبرات العمل */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800 mb-3 border-b border-gray-300 pb-1">3. خبرات العمل (بدءاً من الأحدث) / Work Experience</h3>
+              
+              <div className="border-b border-gray-200 pb-3 mb-3">
+                <p className="text-xs font-bold text-gray-600 mb-2">الوظيفة السابقة الأولى (الأحدث):</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <input type="text" name="company1" placeholder="اسم الشركة / المطعم" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                  <input type="text" name="jobTitle1" placeholder="المسمى الوظيفي" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                  <input type="text" name="salary1" placeholder="المرتب" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                  <input type="text" name="from1" placeholder="من" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                  <input type="text" name="to1" placeholder="إلى" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                  <input type="text" name="reason1" placeholder="سبب ترك العمل" className="border p-2 rounded-lg bg-white text-sm" onChange={handleChange} />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. بيانات إضافية */}
+            <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+              <h3 className="text-lg font-bold text-amber-800 mb-3 border-b border-amber-200 pb-1">4. بيانات إضافية / Additional Information</h3>
+              
+              <div className="space-y-4 text-sm">
+                <div>
+                  <label className="block font-medium mb-1">كيف تقدمت للوظيفة لدينا؟</label>
+                  <input type="text" name="howDidYouApply" placeholder="مثال: فيسبوك / صديق / الموقع" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block font-medium mb-1">هل لديك أقارب بالشركة؟</label>
+                    <select name="hasRelatives" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange}>
+                      <option value="لا">لا</option>
+                      <option value="نعم">نعم</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-1">هل تعمل حالياً؟</label>
+                    <select name="isCurrentlyEmployed" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange}>
+                      <option value="لا">لا</option>
+                      <option value="نعم">نعم</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium mb-1">هل لديك أي مشاكل صحية؟</label>
+                    <select name="hasHealthIssues" className="w-full border p-2 rounded-lg bg-white" onChange={handleChange}>
+                      <option value="لا">لا</option>
+                      <option value="نعم">نعم</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* الإقرار وزر الإرسال */}
+            <div className="text-xs text-gray-500 bg-gray-100 p-3 rounded-lg border">
+              <strong>إقرار:</strong> أقر بأن جميع البيانات المقدمة في هذا الطلب صحيحة وأني مسئول عنها مسئولية كاملة، ولشركة آفاق الحق في التقصي عن كافة المعلومات المدونة أعلاه.
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-lg disabled:opacity-50"
+            >
+              <span>{isSubmitting ? 'جاري التجهيز...' : 'إرسال الطلب وحفظ البيانات عبر الواتساب'}</span>
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+              </svg>
+            </button>
+
+          </form>
+        </div>
+      );
+    }
+
+    // تشغيل التطبيق في الصفحة
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<AfaqEmploymentApplication />);
+  </script>
+</body>
+</html>
